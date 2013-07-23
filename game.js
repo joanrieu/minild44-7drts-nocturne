@@ -4,17 +4,7 @@ var Engine = {
   cameraMove: { x: 0, y: 0 },
   cameraPosition: { x: 0, y: 0 },
   cameraMoveStep: 0.1,
-  levelSize: { x: 0, y: 0 },
-  levelBlockSize: { x: 1, y: 1, z: .25 },
-  levelBlockSpacing: { x: .75, y: .75 },
   updatesPerSecond: 60,
-
-  // Overridable event handlers
-
-  onButtonClick: function() {},
-  onDirectionClick: function(dx, dy) {},
-
-  // Public interface
 
   run: function() {
 
@@ -35,19 +25,14 @@ var Engine = {
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
     this.camera.position.z = this.cameraHeight;
 
-    this.materials = {
-      empty: new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true }),
-      good: new THREE.MeshBasicMaterial({ color: 0x55ff33, wireframe: true }),
-      bad: new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true }),
-      current: new THREE.MeshBasicMaterial({ color: 0x33ccff, wireframe: true }),
-    };
-
     this.scene = new THREE.Scene();
     this.meshes = new Array();
 
     this.registerClick();
     this.registerRender();
     this.registerWindowResize();
+
+    this.onStart();
 
   },
 
@@ -83,19 +68,61 @@ var Engine = {
 
   moveCameraTo: function(x, y) { return this.moveCamera(x - this.cameraPosition.x, y - this.cameraPosition.y); },
 
-  // Internal event handlers
+  onStart: function() {
 
-  onRender: function() {
+    this.level = {
 
-    var mesh = this.meshes[this.cameraPosition.y * this.levelSize.x + this.cameraPosition.x];
-    var material = mesh.material;
-    mesh.material = this.materials.current;
-    this.renderer.render(this.scene, this.camera);
-    mesh.material = material;
+      size: {
+        x: 5,
+        y: 3,
+      },
+
+      block: {
+        size: { x: 1, y: 1, z: .25 },
+        margin: { x: .75, y: .75 },
+      },
+
+      geometry: new THREE.CubeGeometry(1, 1, .2),
+
+      materials: {
+        empty: new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true }),
+        good: new THREE.MeshBasicMaterial({ color: 0x55ff33, wireframe: true }),
+        bad: new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true }),
+        current: new THREE.MeshBasicMaterial({ color: 0x33ccff, wireframe: true }),
+      },
+
+    };
+
+    for (var y = 0; y < this.level.size.y; ++y) {
+      for (var x = 0; x < this.level.size.x; ++x) {
+        var mesh = new THREE.Mesh(this.level.geometry, this.level.materials.empty);
+        mesh.position.x = x * (this.level.block.size.x + this.level.block.margin.x);
+        mesh.position.y = y * (this.level.block.size.y + this.level.block.margin.y);
+        this.scene.add(mesh);
+      }
+    }
 
   },
 
-  registerRender: function() { requestAnimationFrame(_.bind(this.onRender, this)); },
+  onRender: function() {
+
+    this.renderer.render(this.scene, this.camera);
+
+  },
+
+  registerRender: function() {
+
+    requestAnimationFrame(
+      _.bind(
+        function() {
+          this.onRender();
+          this.registerRender();
+        },
+        this
+      )
+    );
+
+  },
 
   onWindowResize: function() {
 
@@ -185,6 +212,14 @@ var Engine = {
         this
       )
     );
+
+  },
+
+  onButtonClick: function() {
+
+  },
+
+  onDirectionClick: function(dx, dy) {
 
   },
 
