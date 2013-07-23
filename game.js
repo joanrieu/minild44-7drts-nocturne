@@ -1,55 +1,66 @@
-var Game = {
+var Engine = {
 
   cameraHeight: 5,
   cameraMove: { x: 0, y: 0 },
   cameraPosition: { x: 0, y: 0 },
   cameraMoveStep: 0.1,
-  levelSize: { x: 10, y: 5 },
+  levelSize: { x: 0, y: 0 },
   levelBlockSize: { x: 1, y: 1, z: .25 },
   levelBlockSpacing: { x: .75, y: .75 },
   updatesPerSecond: 60,
 
-  button: function() {
+  // Overridable event handlers
 
-    // TODO
+  onButtonClick: function() {},
+  onDirectionClick: function(dx, dy) {},
+
+  // Public interface
+
+  run: function() {
+
+    var WebGL = (function () {
+      try {
+        return
+          !!window.WebGLRenderingContext
+          && !!document.createElement('canvas').getContext('experimental-webgl');
+      } catch(e) {
+        return false;
+      }
+    })();
+
+    this.renderer = WebGL ? new THREE.WebGLRenderer() : new THREE.CanvasRenderer();
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(this.renderer.domElement);
+
+    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
+    this.camera.position.z = this.cameraHeight;
+
+    this.materials = {
+      empty: new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true }),
+      good: new THREE.MeshBasicMaterial({ color: 0x55ff33, wireframe: true }),
+      bad: new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true }),
+      current: new THREE.MeshBasicMaterial({ color: 0x33ccff, wireframe: true }),
+    };
+
+    this.scene = new THREE.Scene();
+    this.meshes = new Array();
+
+    this.registerClick();
+    this.registerRender();
+    this.registerWindowResize();
 
   },
 
-  click: function(x, y) {
+  registerUpdate: function(f) { _.delay(_.bind(f, this), 1000 / this.updatesPerSecond); },
 
-    var rx = x / window.innerWidth * 2 - 1;
-    var ry = y / window.innerHeight * -2 + 1;
+  setCamera: function(x, y) {
 
-    if (rx * rx + ry * ry < 0.16) {
-
-      this.button();
-
-    } else {
-
-      var a = Math.atan2(ry, rx);
-
-      var dx = 0;
-      var dy = 0;
-
-      if (Math.abs(a) < Math.PI / 4) {
-        dx = 1;
-      } else if (Math.abs(a) > 3 * Math.PI / 4) {
-        dx = -1;
-      }
-
-      if (Math.abs(a - Math.PI / 2) < Math.PI / 4) {
-        dy = 1;
-      } else if (Math.abs(a + Math.PI / 2) < Math.PI / 4) {
-        dy = -1;
-      }
-
-      this.direction(dx, dy);
-
-    }
+    this.cameraPosition = { x: x, y: y };
+    this.cameraMove = { x: 0, y: 0 };
 
   },
 
-  direction: function(dx, dy) {
+  moveCamera: function(dx, dy) {
 
     if (
       this.cameraPosition.x + dx >= 0
@@ -64,11 +75,17 @@ var Game = {
       this.cameraMove.x += dx * (this.levelBlockSize.x + this.levelBlockSpacing.x);
       this.cameraMove.y += dy * (this.levelBlockSize.y + this.levelBlockSpacing.y);
 
+      this.registerCameraMoveUpdate();
+
     }
 
   },
 
-  render: function() {
+  moveCameraTo: function(x, y) { return this.moveCamera(x - this.cameraPosition.x, y - this.cameraPosition.y); },
+
+  // Internal event handlers
+
+  onRender: function() {
 
     var mesh = this.meshes[this.cameraPosition.y * this.levelSize.x + this.cameraPosition.x];
     var material = mesh.material;
@@ -78,7 +95,9 @@ var Game = {
 
   },
 
-  resize: function() {
+  registerRender: function() { requestAnimationFrame(_.bind(this.onRender, this)); },
+
+  onWindowResize: function() {
 
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -86,84 +105,9 @@ var Game = {
 
   },
 
-  run: function() {
+  registerWindowResize: function() { window.addEventListener('resize', _.bind(this.onWindowResize, this)); },
 
-    this.setUpScene();
-    this.setUpLevel();
-    this.setUpCamera();
-    this.setUpListeners();
-
-  },
-
-  setUpCamera: function() {
-
-    this.cameraPosition.x = Math.random() * this.levelSize.x | 0;
-    this.cameraPosition.y = Math.random() * this.levelSize.y | 0;
-
-    this.camera.position.x = this.cameraPosition.x * (this.levelBlockSize.x + this.levelBlockSpacing.x);
-    this.camera.position.y = this.cameraPosition.y * (this.levelBlockSize.x + this.levelBlockSpacing.x);
-
-  },
-
-  setUpLevel: function() {
-
-    this.meshes = new Array();
-
-    for (var y = 0; y < this.levelSize.y; ++y) {
-      for (var x = 0; x < this.levelSize.x; ++x) {
-        var mesh = new THREE.Mesh(
-          new THREE.CubeGeometry(
-            this.levelBlockSize.x,
-            this.levelBlockSize.y,
-            this.levelBlockSize.z
-          ), this.materials.empty);
-        mesh.position.x = x * (this.levelBlockSize.x + this.levelBlockSpacing.x);
-        mesh.position.y = y * (this.levelBlockSize.y + this.levelBlockSpacing.y);
-        this.meshes.push(mesh);
-        this.scene.add(mesh);
-      }
-    }
-
-  },
-
-  setUpListeners: function() {
-
-    var self = this;
-
-    this.updateCb = function() { self.update(); };
-    window.setInterval(this.updateCb, 1000 / this.updatesPerSecond);
-
-    this.renderCb = function() { requestAnimationFrame(self.renderCb); self.render(); };
-    this.renderCb();
-
-    window.addEventListener('resize', function() { self.resize(); });
-
-    document.addEventListener('click', function(e) { self.click(e.clientX, e.clientY); return false; });
-
-  },
-
-  setUpScene: function() {
-
-    this.scene = new THREE.Scene();
-
-    var WebGL = ( function () { try { return !! window.WebGLRenderingContext && !! document.createElement( 'canvas' ).getContext( 'experimental-webgl' ); } catch( e ) { return false; } } )();
-    this.renderer = WebGL ? new THREE.WebGLRenderer(): new THREE.CanvasRenderer();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(this.renderer.domElement);
-
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
-    this.camera.position.z = this.cameraHeight;
-
-    this.materials = {
-      empty: new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true }),
-      good: new THREE.MeshBasicMaterial({ color: 0x55ff33, wireframe: true }),
-      bad: new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true }),
-      current: new THREE.MeshBasicMaterial({ color: 0x33ccff, wireframe: true }),
-    };
-
-  },
-
-  update: function() {
+  onCameraMoveUpdate: function() {
 
     if (this.cameraMove.x > this.cameraMoveStep) {
       this.camera.position.x += this.cameraMoveStep;
@@ -187,8 +131,63 @@ var Game = {
       this.cameraMove.y = 0;
     }
 
+    if (this.cameraMove.x !== 0 || this.cameraMove.y !== 0) {
+      this.registerCameraMoveUpdate();
+    }
+
+  },
+
+  registerCameraMoveUpdate: function() { registerUpdate(this, this.onCameraMoveUpdate); },
+
+  onClick: function(x, y) {
+
+    var rx = x / window.innerWidth * 2 - 1;
+    var ry = y / window.innerHeight * -2 + 1;
+
+    if (rx * rx + ry * ry < 0.16) {
+
+      this.onButtonClick();
+
+    } else {
+
+      var a = Math.atan2(ry, rx);
+
+      var dx = 0;
+      var dy = 0;
+
+      if (Math.abs(a) < Math.PI / 4) {
+        dx = 1;
+      } else if (Math.abs(a) > 3 * Math.PI / 4) {
+        dx = -1;
+      }
+
+      if (Math.abs(a - Math.PI / 2) < Math.PI / 4) {
+        dy = 1;
+      } else if (Math.abs(a + Math.PI / 2) < Math.PI / 4) {
+        dy = -1;
+      }
+
+      this.onDirectionClick(dx, dy);
+
+    }
+
+  },
+
+  registerClick: function() {
+
+    document.addEventListener(
+      'click',
+      _.bind(
+        function(e) {
+          this.onClick(e.clientX, e.clientY);
+          return false;
+        },
+        this
+      )
+    );
+
   },
 
 };
 
-Game.run();
+Engine.run();
