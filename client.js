@@ -28,11 +28,12 @@ var Engine = {
         margin: { x: .75, y: .75 },
       },
 
+      blocks: [],
+
       renderer: WebGL ? new THREE.WebGLRenderer() : new THREE.CanvasRenderer(),
       scene: new THREE.Scene(),
       camera: new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000),
 
-      meshes: [],
       geometry: new THREE.CubeGeometry(1, 1, .2),
       materials: {
         empty: new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true }),
@@ -228,13 +229,13 @@ var Engine = {
 
   onButtonClick: function() {
 
-    console.debug("middle button");
+    this.sendRPC('capture');
 
   },
 
   onDirectionClick: function(dx, dy) {
 
-    console.debug("direction button", dx, dy);
+    console.debug('direction button', dx, dy);
 
   },
 
@@ -242,13 +243,16 @@ var Engine = {
 
     var rpc = JSON.parse(message.data);
     var call = rpc.procedure;
+    var data = rpc.data;
 
-    if (call === 'position') {
-      this.onPositionMessage(rpc);
+    if (call === 'id') {
+      this.onIdMessage(data);
+    } else if (call === 'position') {
+      this.onPositionMessage(data);
     } else if (call === 'block') {
-      this.onBlockMessage(rpc);
+      this.onBlockMessage(data);
     } else {
-      console.error("unknown RPC", rpc);
+      console.error('unknown RPC', rpc);
     }
 
   },
@@ -262,21 +266,37 @@ var Engine = {
 
   },
 
-  onPositionMessage: function(rpc) {
+  onIdMessage: function(id) {
 
-    this.setCamera(rpc.x, rpc.y);
+    this.playerId = id;
 
   },
 
-  onBlockMessage: function(rpc) {
+  onPositionMessage: function(position) {
 
+    this.setCamera(position.x, position.y);
+
+  },
+
+  onBlockMessage: function(block) {
+
+
+    var team = block.team === undefined ? 'empty' : block.team === this.playerId ? 'good' : 'bad';
+
+    var mesh = new THREE.Mesh(this.geometry, this.materials[team]);
     var scale = this.getGridToScreenScale();
-
-    var mesh = new THREE.Mesh(this.geometry, this.materials[rpc.team || 'empty']);
-    mesh.position.x = scale.x * rpc.position.x;
-    mesh.position.y = scale.y * rpc.position.y;
-    this.meshes.push(mesh);
+    mesh.position.x = scale.x * block.position.x;
+    mesh.position.y = scale.y * block.position.y;
     this.scene.add(mesh);
+
+    var oldBlock = _.find(this.blocks, function(block2) { return _.isEqual(block2.position, block.position); });
+
+    if (oldBlock) {
+      this.scene.remove(oldBlock.mesh);
+      this.blocks = _.without(this.blocks, oldBlock);
+    }
+
+    this.blocks.push(_.extend(block, { mesh: mesh }));
 
   },
 

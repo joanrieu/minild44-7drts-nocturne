@@ -41,37 +41,61 @@ var webServer = http.createServer(function(request, response) {
 var gameServer = new WebSocketServer({ server: webServer });
 
 var game = {
+
   size: {
     x: 5,
     y: 3,
   },
+
   players: [],
+
+  sendRPC: function(player, procedure, data) {
+    var rpc = {
+      procedure: procedure,
+      data: data
+    };
+    player.ws.send(JSON.stringify(rpc));
+  },
+
+  broadcastRPC: function(procedure, data) {
+    _.each(this.players, _.bind(function(player) {
+      this.sendRPC(player, procedure, data);
+    }, this));
+  },
+
+  onCapture: function(player) {
+
+    var surroundings = _.filter(this.board, function(block) {
+      return block.position.x >= player.position.x - 1
+        && block.position.x <= player.position.x + 1
+        && block.position.y >= player.position.y - 1
+        && block.position.y <= player.position.y + 1;
+    });
+
+    _.each(surroundings, _.bind(function(block) {
+      block.team = player.id;
+      this.broadcastRPC('block', block);
+    }, this));
+
+  },
+
 };
 
 gameServer.on('connection', function(ws) {
 
-  function sendRPC(procedure, data) {
-    var rpc = { procedure: procedure };
-    _.extend(rpc, data);
-    ws.send(JSON.stringify(rpc));
-  }
-
-  function getPlayer() {
-    return _.findWhere(game.players, { ws: ws });
-  }
-
-  // Register the new player
-
-  game.players.push({
+  var player = {
     id: _.size(game.players), // TODO globally unique id ?
     ws: ws,
     position: { // TODO safe spawn point
       x: Math.floor(Math.random() * game.size.x),
       y: Math.floor(Math.random() * game.size.y),
     }
-  });
+  };
 
-  sendRPC('position', getPlayer().position);
+  game.players.push(player);
+
+  game.sendRPC(player, 'id', player.id);
+  game.sendRPC(player, 'position', player.position);
 
   // Create a new game board if needed
 
@@ -96,8 +120,10 @@ gameServer.on('connection', function(ws) {
 
   }
 
+  // Send the whole board
+
   _.each(game.board, function(block) {
-    sendRPC('block', block);
+    game.sendRPC(player, 'block', block);
   });
 
   // Events
@@ -108,7 +134,7 @@ gameServer.on('connection', function(ws) {
     var call = rpc.procedure;
 
     if (call == 'capture') {
-      console.log('TODO: capture around player', getPlayer().id, 'who is at', getPlayer().position);
+      game.onCapture(player);
     } else {
       console.error('unknown RPC', rpc);
     }
@@ -117,7 +143,7 @@ gameServer.on('connection', function(ws) {
 
   ws.on('close', function() {
 
-    game.players = _.reject(game.players, function(player) { return player.ws === ws; });
+    game.players = _.without(game.players, player);
 
   });
 
