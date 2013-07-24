@@ -40,51 +40,58 @@ var webServer = http.createServer(function(request, response) {
 
 var gameServer = new WebSocketServer({ server: webServer });
 
-var game = {
+function Game() {
 
-  size: {
-    x: 5,
-    y: 3,
-  },
+  _.extend(this, {
 
-  players: [],
+    size: {
+      x: 5,
+      y: 3,
+    },
 
-  sendRPC: function(player, procedure, data) {
-    var rpc = {
-      procedure: procedure,
-      data: data
-    };
-    player.ws.send(JSON.stringify(rpc));
-  },
+    players: [],
+    nextPlayerId: 0,
 
-  broadcastRPC: function(procedure, data) {
-    _.each(this.players, _.bind(function(player) {
-      this.sendRPC(player, procedure, data);
-    }, this));
-  },
+    sendRPC: function(player, procedure, data) {
+      var rpc = {
+        procedure: procedure,
+        data: data
+      };
+      player.ws.send(JSON.stringify(rpc));
+    },
 
-  onCapture: function(player) {
+    broadcastRPC: function(procedure, data) {
+      _.each(this.players, _.bind(function(player) {
+        this.sendRPC(player, procedure, data);
+      }, this));
+    },
 
-    var surroundings = _.filter(this.board, function(block) {
-      return block.position.x >= player.position.x - 1
-        && block.position.x <= player.position.x + 1
-        && block.position.y >= player.position.y - 1
-        && block.position.y <= player.position.y + 1;
-    });
+    onCapture: function(player) {
 
-    _.each(surroundings, _.bind(function(block) {
-      block.team = player.id;
-      this.broadcastRPC('block', block);
-    }, this));
+      var surroundings = _.filter(this.board, function(block) {
+        return block.position.x >= player.position.x - 1
+          && block.position.x <= player.position.x + 1
+          && block.position.y >= player.position.y - 1
+          && block.position.y <= player.position.y + 1;
+      });
 
-  },
+      _.each(surroundings, _.bind(function(block) {
+        block.team = player.id;
+        this.broadcastRPC('block', block);
+      }, this));
+
+    },
+
+  });
 
 };
+
+var game = new Game();
 
 gameServer.on('connection', function(ws) {
 
   var player = {
-    id: _.size(game.players), // TODO globally unique id ?
+    id: game.nextPlayerId++,
     ws: ws,
     position: { // TODO safe spawn point
       x: Math.floor(Math.random() * game.size.x),
@@ -120,13 +127,9 @@ gameServer.on('connection', function(ws) {
 
   }
 
-  // Send the whole board
-
   _.each(game.board, function(block) {
     game.sendRPC(player, 'block', block);
   });
-
-  // Events
 
   ws.on('message', function(rpc) {
 
