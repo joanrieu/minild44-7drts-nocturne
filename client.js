@@ -41,6 +41,8 @@ var Engine = {
         current: new THREE.MeshBasicMaterial({ color: 0x33ccff, wireframe: true }),
       },
 
+      ws: new WebSocket('ws://' + document.location.host),
+
     });
 
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -50,6 +52,7 @@ var Engine = {
     this.registerWindowResize();
     this.registerRender();
     this.registerClick();
+    this.registerMessage();
 
   },
 
@@ -57,6 +60,12 @@ var Engine = {
 
     _.delay(_.bind(f, this), 1000 / this.updatesPerSecond);
 
+  },
+
+  sendRPC: function(procedure, data) {
+    var rpc = { procedure: procedure };
+    _.extend(rpc, data);
+    this.ws.send(JSON.stringify(rpc));
   },
 
   getGridToScreenScale: function() {
@@ -226,6 +235,48 @@ var Engine = {
   onDirectionClick: function(dx, dy) {
 
     console.debug("direction button", dx, dy);
+
+  },
+
+  onMessage: function(message) {
+
+    var rpc = JSON.parse(message.data);
+    var call = rpc.procedure;
+
+    if (call === 'position') {
+      this.onPositionMessage(rpc);
+    } else if (call === 'block') {
+      this.onBlockMessage(rpc);
+    } else {
+      console.error("unknown RPC", rpc);
+    }
+
+  },
+
+  registerMessage: function() {
+
+    this.ws.onmessage = _.bind(this.onMessage, this);
+    this.ws.onclose = this.ws.onerror = function() {
+      alert('Cannot connect to the game server!');
+    }
+
+  },
+
+  onPositionMessage: function(rpc) {
+
+    this.setCamera(rpc.x, rpc.y);
+
+  },
+
+  onBlockMessage: function(rpc) {
+
+    var scale = this.getGridToScreenScale();
+
+    var mesh = new THREE.Mesh(this.geometry, this.materials[rpc.team || 'empty']);
+    mesh.position.x = scale.x * rpc.position.x;
+    mesh.position.y = scale.y * rpc.position.y;
+    this.meshes.push(mesh);
+    this.scene.add(mesh);
 
   },
 
