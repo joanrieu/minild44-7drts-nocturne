@@ -1,9 +1,12 @@
 var Engine = {
 
-  cameraHeight: 5,
-  cameraMove: { x: 0, y: 0 },
-  cameraPosition: { x: 0, y: 0 },
-  cameraMoveStep: 0.1,
+  smoothCamera: {
+    target: { x: 0, y: 0 },
+    delta: { x: 0, y: 0 },
+    step: 0.1,
+    precision: 0.001,
+  },
+
   updatesPerSecond: 60,
 
   run: function() {
@@ -23,7 +26,7 @@ var Engine = {
     document.body.appendChild(this.renderer.domElement);
 
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
-    this.camera.position.z = this.cameraHeight;
+    this.camera.position.z = 5;
 
     this.scene = new THREE.Scene();
     this.meshes = new Array();
@@ -36,46 +39,53 @@ var Engine = {
 
   },
 
-  registerUpdate: function(f) { _.delay(_.bind(f, this), 1000 / this.updatesPerSecond); },
+  registerUpdate: function(f) {
+
+    _.delay(_.bind(f, this), 1000 / this.updatesPerSecond);
+
+  },
+
+  getGridScale: function() {
+
+    return {
+      x: this.block.size.x + this.block.margin.x,
+      y: this.block.size.y + this.block.margin.y,
+    };
+
+  },
 
   setCamera: function(x, y) {
 
-    this.cameraPosition = { x: x, y: y };
-    this.cameraMove = { x: 0, y: 0 };
+    this.smoothCamera.target = { x: x, y: y };
+    this.smoothCamera.delta = { x: 0, y: 0 };
+
+    var scale = this.getGridScale();
+    this.camera.position.x = this.smoothCamera.target.x * scale.x;
+    this.camera.position.y = this.smoothCamera.target.y * scale.y;
 
   },
 
   moveCamera: function(dx, dy) {
 
-    if (
-      this.cameraPosition.x + dx >= 0
-      && this.cameraPosition.x + dx < this.levelSize.x
-      && this.cameraPosition.y + dy >= 0
-      && this.cameraPosition.y + dy < this.levelSize.y
-    ) {
+    this.smoothCamera.target.x += dx;
+    this.smoothCamera.target.y += dy;
 
-      this.cameraPosition.x += dx;
-      this.cameraPosition.y += dy;
+    this.smoothCamera.delta.x += dx;
+    this.smoothCamera.delta.y += dy;
 
-      this.cameraMove.x += dx * (this.levelBlockSize.x + this.levelBlockSpacing.x);
-      this.cameraMove.y += dy * (this.levelBlockSize.y + this.levelBlockSpacing.y);
-
-      this.registerCameraMoveUpdate();
-
-    }
+    this.registerCameraDeltaUpdate();
 
   },
 
-  moveCameraTo: function(x, y) { return this.moveCamera(x - this.cameraPosition.x, y - this.cameraPosition.y); },
+  moveCameraTo: function(x, y) {
+
+    this.moveCamera(x - this.smoothCamera.target.x, y - this.smoothCamera.target.y);
+
+  },
 
   onStart: function() {
 
-    this.level = {
-
-      size: {
-        x: 5,
-        y: 3,
-      },
+    _.extend(this, {
 
       block: {
         size: { x: 1, y: 1, z: .25 },
@@ -91,13 +101,13 @@ var Engine = {
         current: new THREE.MeshBasicMaterial({ color: 0x33ccff, wireframe: true }),
       },
 
-    };
+    });
 
-    for (var y = 0; y < this.level.size.y; ++y) {
-      for (var x = 0; x < this.level.size.x; ++x) {
-        var mesh = new THREE.Mesh(this.level.geometry, this.level.materials.empty);
-        mesh.position.x = x * (this.level.block.size.x + this.level.block.margin.x);
-        mesh.position.y = y * (this.level.block.size.y + this.level.block.margin.y);
+    for (var y = 0; y < 3; ++y) {
+      for (var x = 0; x < 5; ++x) {
+        var mesh = new THREE.Mesh(this.geometry, this.materials.empty);
+        mesh.position.x = x * (this.block.size.x + this.block.margin.x);
+        mesh.position.y = y * (this.block.size.y + this.block.margin.y);
         this.scene.add(mesh);
       }
     }
@@ -132,39 +142,49 @@ var Engine = {
 
   },
 
-  registerWindowResize: function() { window.addEventListener('resize', _.bind(this.onWindowResize, this)); },
+  registerWindowResize: function() {
 
-  onCameraMoveUpdate: function() {
+    window.addEventListener('resize', _.bind(this.onWindowResize, this));
 
-    if (this.cameraMove.x > this.cameraMoveStep) {
-      this.camera.position.x += this.cameraMoveStep;
-      this.cameraMove.x -= this.cameraMoveStep;
-    } else if (this.cameraMove.x < -this.cameraMoveStep) {
-      this.camera.position.x -= this.cameraMoveStep;
-      this.cameraMove.x += this.cameraMoveStep;
+  },
+
+  onCameraDeltaUpdate: function() {
+
+    var gridStep = {
+      x: this.smoothCamera.step * this.smoothCamera.delta.x,
+      y: this.smoothCamera.step * this.smoothCamera.delta.y,
+    };
+
+    this.smoothCamera.delta.x -= gridStep.x;
+    this.smoothCamera.delta.y -= gridStep.y;
+
+    var scale = this.getGridScale();
+
+    var realStep = {
+      x: gridStep.x * scale.x,
+      y: gridStep.y * scale.y,
+    };
+
+    this.camera.position.x += realStep.x;
+    this.camera.position.y += realStep.y;
+
+    if (
+      Math.abs(this.smoothCamera.delta.x) > this.smoothCamera.precision
+      || Math.abs(this.smoothCamera.delta.y) > this.smoothCamera.precision
+    ) {
+      console.log("spinnin'");
+      this.registerCameraDeltaUpdate();
     } else {
-      this.camera.position.x += this.cameraMove.x;
-      this.cameraMove.x = 0;
-    }
-
-    if (this.cameraMove.y > this.cameraMoveStep) {
-      this.camera.position.y += this.cameraMoveStep;
-      this.cameraMove.y -= this.cameraMoveStep;
-    } else if (this.cameraMove.y < -this.cameraMoveStep) {
-      this.camera.position.y -= this.cameraMoveStep;
-      this.cameraMove.y += this.cameraMoveStep;
-    } else {
-      this.camera.position.y += this.cameraMove.y;
-      this.cameraMove.y = 0;
-    }
-
-    if (this.cameraMove.x !== 0 || this.cameraMove.y !== 0) {
-      this.registerCameraMoveUpdate();
+      this.setCamera(this.smoothCamera.target.x, this.smoothCamera.target.y);
     }
 
   },
 
-  registerCameraMoveUpdate: function() { registerUpdate(this, this.onCameraMoveUpdate); },
+  registerCameraDeltaUpdate: function() {
+
+    this.registerUpdate(this.onCameraDeltaUpdate);
+
+  },
 
   onClick: function(x, y) {
 
@@ -217,9 +237,13 @@ var Engine = {
 
   onButtonClick: function() {
 
+    console.debug("middle button");
+
   },
 
   onDirectionClick: function(dx, dy) {
+
+    console.debug("direction button", dx, dy);
 
   },
 
