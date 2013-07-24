@@ -21,21 +21,35 @@ var Engine = {
       }
     })();
 
-    this.renderer = WebGL ? new THREE.WebGLRenderer() : new THREE.CanvasRenderer();
+    _.extend(this, {
+
+      block: {
+        size: { x: 1, y: 1, z: .25 },
+        margin: { x: .75, y: .75 },
+      },
+
+      renderer: WebGL ? new THREE.WebGLRenderer() : new THREE.CanvasRenderer(),
+      scene: new THREE.Scene(),
+      camera: new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000),
+
+      meshes: [],
+      geometry: new THREE.CubeGeometry(1, 1, .2),
+      materials: {
+        empty: new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true }),
+        good: new THREE.MeshBasicMaterial({ color: 0x55ff33, wireframe: true }),
+        bad: new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true }),
+        current: new THREE.MeshBasicMaterial({ color: 0x33ccff, wireframe: true }),
+      },
+
+    });
+
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(this.renderer.domElement);
-
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
     this.camera.position.z = 5;
 
-    this.scene = new THREE.Scene();
-    this.meshes = new Array();
-
-    this.registerClick();
-    this.registerRender();
     this.registerWindowResize();
-
-    this.onStart();
+    this.registerRender();
+    this.registerClick();
 
   },
 
@@ -45,7 +59,7 @@ var Engine = {
 
   },
 
-  getGridScale: function() {
+  getGridToScreenScale: function() {
 
     return {
       x: this.block.size.x + this.block.margin.x,
@@ -59,7 +73,7 @@ var Engine = {
     this.smoothCamera.target = { x: x, y: y };
     this.smoothCamera.delta = { x: 0, y: 0 };
 
-    var scale = this.getGridScale();
+    var scale = this.getGridToScreenScale();
     this.camera.position.x = this.smoothCamera.target.x * scale.x;
     this.camera.position.y = this.smoothCamera.target.y * scale.y;
 
@@ -80,37 +94,6 @@ var Engine = {
   moveCameraTo: function(x, y) {
 
     this.moveCamera(x - this.smoothCamera.target.x, y - this.smoothCamera.target.y);
-
-  },
-
-  onStart: function() {
-
-    _.extend(this, {
-
-      block: {
-        size: { x: 1, y: 1, z: .25 },
-        margin: { x: .75, y: .75 },
-      },
-
-      geometry: new THREE.CubeGeometry(1, 1, .2),
-
-      materials: {
-        empty: new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true }),
-        good: new THREE.MeshBasicMaterial({ color: 0x55ff33, wireframe: true }),
-        bad: new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true }),
-        current: new THREE.MeshBasicMaterial({ color: 0x33ccff, wireframe: true }),
-      },
-
-    });
-
-    for (var y = 0; y < 3; ++y) {
-      for (var x = 0; x < 5; ++x) {
-        var mesh = new THREE.Mesh(this.geometry, this.materials.empty);
-        mesh.position.x = x * (this.block.size.x + this.block.margin.x);
-        mesh.position.y = y * (this.block.size.y + this.block.margin.y);
-        this.scene.add(mesh);
-      }
-    }
 
   },
 
@@ -158,7 +141,7 @@ var Engine = {
     this.smoothCamera.delta.x -= gridStep.x;
     this.smoothCamera.delta.y -= gridStep.y;
 
-    var scale = this.getGridScale();
+    var scale = this.getGridToScreenScale();
 
     var realStep = {
       x: gridStep.x * scale.x,
@@ -172,7 +155,6 @@ var Engine = {
       Math.abs(this.smoothCamera.delta.x) > this.smoothCamera.precision
       || Math.abs(this.smoothCamera.delta.y) > this.smoothCamera.precision
     ) {
-      console.log("spinnin'");
       this.registerCameraDeltaUpdate();
     } else {
       this.setCamera(this.smoothCamera.target.x, this.smoothCamera.target.y);
