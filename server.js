@@ -57,7 +57,7 @@ function Game() {
           y: 0,
         }
       });
-      this.sendRPC(player, 'position', player.position);
+      this.sendRPC(player, 'move', player.position);
 
       var spawn = this.findBlock(player.position);
       if (spawn !== undefined) {
@@ -138,8 +138,7 @@ function Game() {
       return _.find(
         this.board,
         function(block) {
-          return block.position.x === position.x
-            && block.position.y === position.y;
+          return _.isEqual(block.position, position);
         }
       );
 
