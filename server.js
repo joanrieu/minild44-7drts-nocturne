@@ -12,10 +12,11 @@ function Game() {
     board: [
       {
         type: 'end',
+        tries: 0,
         position: {
           x: 0,
           y: 0
-        }
+        },
       }
     ],
 
@@ -148,51 +149,43 @@ function Game() {
 
       var block = this.findBlock(player.position);
 
-      if (block === undefined) {
-        return;
-      }
-
       var moveId = player.moveId;
 
-      if (block.type === 'empty') {
-
-        _.delay(
-          _.bind(
-            function() {
-              if (player.moveId === moveId) {
-                block.type = 'captured';
-                block.team = player.id;
-                this.broadcastRPC('block', block);
-                this.startCapture(player);
-              }
-            },
-            this
-          ),
-          10000
-        );
-
-      } else if (block.type === 'captured') {
-
-        _.delay(
-          _.bind(
-            function() {
-              if (player.moveId === moveId) {
-                block.type = 'secured';
-                block.team = player.id;
-                this.broadcastRPC('block', block);
-                this.startCapture(player);
-              }
-            },
-            this
-          ),
-          20000
-        );
-
-      } else if (block.type === 'end') {
-
-        // TODO
-
+      function register(self, type, delay, callback) {
+        if (block.type === type) {
+          _.delay(
+            _.bind(
+              function() {
+                if (block.type === type && player.moveId === moveId) {
+                  callback();
+                  this.broadcastRPC('block', block);
+                  this.startCapture(player);
+                }
+              },
+              self
+            ),
+            delay
+          );
+        }
       }
+
+      register(this, 'empty', 3000, function() {
+        block.type = 'captured';
+        block.team = player.id;
+      });
+
+      register(this, 'captured', 7000, function() {
+        block.type = 'secured';
+        block.team = player.id;
+      });
+
+      register(this, 'end', 15000, function() {
+        if (Math.random() < block.tries++ / 3) {
+          this.broadcastRPC('end');
+        } else {
+          // TODO
+        }
+      });
 
     },
 
