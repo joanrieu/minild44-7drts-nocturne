@@ -83,16 +83,28 @@ function Game() {
       var data = rpc.data;
 
       if (call === 'move') {
-        this.onMoveMessage(player);
+        this.onMoveMessage(player, data);
       } else {
         console.error('unknown RPC', rpc);
       }
 
     },
 
-    onMoveMessage: function(player) {
+    onMoveMessage: function(player, move) {
 
-      // TODO
+      if (
+        _.indexOf([-1, 0, 1], move.dx) === -1
+        || _.indexOf([-1, 0, 1], move.dy) === -1
+      ) {
+
+        console.error('Cheater detected:', player.ws.upgradeReq.connection.remoteAddress);
+
+      } else {
+
+        player.position.x += move.dx;
+        player.position.y += move.dy;
+
+      }
 
     },
 
@@ -100,12 +112,14 @@ function Game() {
       var max = (Math.sqrt(_.size(this.board)) + 1) / 2;
       for (var x = -max; x <= max; ++x) {
         this.board.push({
+          type: 'empty',
           position: {
             x: x,
             y: max,
           }
         });
         this.board.push({
+          type: 'empty',
           position: {
             x: x,
             y: -max,
@@ -114,12 +128,14 @@ function Game() {
       }
       for (var y = -max + 1; y < max; ++y) {
         this.board.push({
+          type: 'empty',
           position: {
             x: max,
             y: y,
           }
         });
         this.board.push({
+          type: 'empty',
           position: {
             x: -max,
             y: y,
@@ -148,8 +164,8 @@ var webServer = http.createServer(function(request, response) {
   }
 
   function serve404() {
-    response.writeHead(404, { "Content-type": "text/plain" });
-    response.end("404 Not Found\n");
+    response.writeHead(404, { 'Content-type': 'text/plain' });
+    response.end('404 Not Found\n');
   }
 
   if (path === '') {

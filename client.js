@@ -68,7 +68,10 @@ function Game() {
     sendRPC: function(procedure, data) {
       var rpc = { procedure: procedure };
       _.extend(rpc, data);
-      this.ws.send(JSON.stringify(rpc));
+      this.ws.send(JSON.stringify({
+        procedure: procedure,
+        data: data,
+      }));
     },
 
     getGridToScreenScale: function() {
@@ -185,30 +188,28 @@ function Game() {
       var rx = x / window.innerWidth * 2 - 1;
       var ry = y / window.innerHeight * -2 + 1;
 
-      if (rx * rx + ry * ry < 0.16) {
+      if (rx * rx + ry * ry > 0.01) {
 
-        this.onButtonClick();
-
-      } else {
-
-        var a = Math.atan2(ry, rx);
+        var angle = Math.atan2(ry, rx);
+        var part = Math.round(angle / (Math.PI / 4));
 
         var dx = 0;
         var dy = 0;
 
-        if (Math.abs(a) < Math.PI / 4) {
+        if (_.indexOf([-1, 0, 1], part) !== -1) {
           dx = 1;
-        } else if (Math.abs(a) > 3 * Math.PI / 4) {
+        } else if (_.indexOf([-4, -3, 3, 4], part) !== -1) {
           dx = -1;
         }
 
-        if (Math.abs(a - Math.PI / 2) < Math.PI / 4) {
+        if (_.indexOf([1, 2, 3], part) !== -1) {
           dy = 1;
-        } else if (Math.abs(a + Math.PI / 2) < Math.PI / 4) {
+        } else if (_.indexOf([-1, -2, -3], part) !== -1) {
           dy = -1;
         }
 
-        this.onDirectionClick(dx, dy);
+        this.moveCamera(dx, dy);
+        this.sendRPC('move', { dx: dx, dy: dy });
 
       }
 
@@ -226,18 +227,6 @@ function Game() {
           this
         )
       );
-
-    },
-
-    onButtonClick: function() {
-
-      this.sendRPC('capture');
-
-    },
-
-    onDirectionClick: function(dx, dy) {
-
-      console.debug('direction button', dx, dy);
 
     },
 
@@ -276,7 +265,7 @@ function Game() {
 
     onPositionMessage: function(position) {
 
-      this.setCamera(position.x, position.y);
+      this.moveCamera(position.x, position.y);
 
     },
 
