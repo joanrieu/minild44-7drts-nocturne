@@ -1,9 +1,136 @@
-var http = require('http'),
+var _ = require('underscore'),
+  http = require('http'),
   url = require('url'),
   path = require('path'),
   fs = require('fs'),
-  WebSocketServer = require('ws').Server,
-  _ = require('underscore');
+  WebSocketServer = require('ws').Server;
+
+function Game() {
+
+  _.extend(this, {
+
+    board: [
+      {
+        type: 'end',
+        position: {
+          x: 0,
+          y: 0
+        }
+      }
+    ],
+
+    players: [],
+    nextPlayerId: 0,
+
+    sendRPC: function(player, procedure, data) {
+      var rpc = {
+        procedure: procedure,
+        data: data
+      };
+      player.ws.send(JSON.stringify(rpc));
+    },
+
+    broadcastRPC: function(procedure, data) {
+      _.each(this.players, _.bind(function(player) {
+        this.sendRPC(player, procedure, data);
+      }, this));
+    },
+
+    onConnection: function(ws) {
+
+      var player = {
+        id: this.nextPlayerId++,
+        ws: ws,
+      };
+      this.players.push(player);
+      this.sendRPC(player, 'id', player.id);
+
+      while (_.size(this.board) < 10 * _.size(this.players)) {
+        this.growBoard();
+      }
+
+      _.extend(player, {
+        position: { // TODO random spawn position
+          x: 0,
+          y: 0,
+        }
+      });
+      this.sendRPC(player, 'position', player.position);
+
+      _.each(this.board, _.bind(function(block) {
+        this.broadcastRPC('block', block);
+      }, this));
+
+      ws.on('message', _.bind(this.onMessage, this, player));
+      ws.on('close', _.bind(this.onDisconnection, this, player));
+
+    },
+
+    onDisconnection: function(player) {
+
+      this.players = _.without(this.players, player);
+
+      if (_.size(this.players) === 0) {
+        _.extend(this, new Game());
+      }
+
+    },
+
+    onMessage: function(player, rpc) {
+
+      var rpc = JSON.parse(rpc);
+      var call = rpc.procedure;
+      var data = rpc.data;
+
+      if (call === 'move') {
+        this.onMoveMessage(player);
+      } else {
+        console.error('unknown RPC', rpc);
+      }
+
+    },
+
+    onMoveMessage: function(player) {
+
+      // TODO
+
+    },
+
+    growBoard: function() {
+      var max = (Math.sqrt(_.size(this.board)) + 1) / 2;
+      for (var x = -max; x <= max; ++x) {
+        this.board.push({
+          position: {
+            x: x,
+            y: max,
+          }
+        });
+        this.board.push({
+          position: {
+            x: x,
+            y: -max,
+          }
+        });
+      }
+      for (var y = -max + 1; y < max; ++y) {
+        this.board.push({
+          position: {
+            x: max,
+            y: y,
+          }
+        });
+        this.board.push({
+          position: {
+            x: -max,
+            y: y,
+          }
+        });
+      }
+    },
+
+  });
+
+};
 
 var webServer = http.createServer(function(request, response) {
 
@@ -39,117 +166,7 @@ var webServer = http.createServer(function(request, response) {
 });
 
 var gameServer = new WebSocketServer({ server: webServer });
-
-function Game() {
-
-  _.extend(this, {
-
-    size: {
-      x: 5,
-      y: 3,
-    },
-
-    players: [],
-    nextPlayerId: 0,
-
-    sendRPC: function(player, procedure, data) {
-      var rpc = {
-        procedure: procedure,
-        data: data
-      };
-      player.ws.send(JSON.stringify(rpc));
-    },
-
-    broadcastRPC: function(procedure, data) {
-      _.each(this.players, _.bind(function(player) {
-        this.sendRPC(player, procedure, data);
-      }, this));
-    },
-
-    onCapture: function(player) {
-
-      var surroundings = _.filter(this.board, function(block) {
-        return block.position.x >= player.position.x - 1
-          && block.position.x <= player.position.x + 1
-          && block.position.y >= player.position.y - 1
-          && block.position.y <= player.position.y + 1;
-      });
-
-      _.each(surroundings, _.bind(function(block) {
-        block.team = player.id;
-        this.broadcastRPC('block', block);
-      }, this));
-
-    },
-
-  });
-
-};
-
 var game = new Game();
-
-gameServer.on('connection', function(ws) {
-
-  var player = {
-    id: game.nextPlayerId++,
-    ws: ws,
-    position: { // TODO safe spawn point
-      x: Math.floor(Math.random() * game.size.x),
-      y: Math.floor(Math.random() * game.size.y),
-    }
-  };
-
-  game.players.push(player);
-
-  game.sendRPC(player, 'id', player.id);
-  game.sendRPC(player, 'position', player.position);
-
-  // Create a new game board if needed
-
-  if (_.size(game.players) === 1) {
-
-    game.board = [];
-
-    for (var y = 0; y < game.size.y; ++y) {
-      for (var x = 0; x < game.size.x; ++x) {
-
-        var block = {
-          position: {
-            x: x,
-            y: y,
-          },
-        };
-
-        game.board.push(block);
-
-      }
-    }
-
-  }
-
-  _.each(game.board, function(block) {
-    game.sendRPC(player, 'block', block);
-  });
-
-  ws.on('message', function(rpc) {
-
-    var rpc = JSON.parse(rpc);
-    var call = rpc.procedure;
-
-    if (call == 'capture') {
-      game.onCapture(player);
-    } else {
-      console.error('unknown RPC', rpc);
-    }
-
-  });
-
-  ws.on('close', function() {
-
-    game.players = _.without(game.players, player);
-
-  });
-
-});
+gameServer.on('connection', function(ws) { game.onConnection(ws); });
 
 webServer.listen(8080);
