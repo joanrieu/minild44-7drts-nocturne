@@ -100,18 +100,26 @@ function Game() {
     onMoveMessage: function(player, move) {
 
       if (
-        _.indexOf([-1, 0, 1], move.dx) === -1
-        || _.indexOf([-1, 0, 1], move.dy) === -1
+        _.indexOf([-1, 0, 1], move.x) === -1
+        || _.indexOf([-1, 0, 1], move.y) === -1
       ) {
 
         console.error('Cheater detected:', player.ws.upgradeReq.connection.remoteAddress);
 
       } else {
 
-        player.position.x += move.dx;
-        player.position.y += move.dy;
+        if (this.findBlock({
+          x: player.position.x + move.x,
+          y: player.position.y + move.y,
+        }) !== undefined) {
 
-        this.onPlayerMove(player);
+          player.position.x += move.x;
+          player.position.y += move.y;
+
+          this.sendRPC(player, 'move', move);
+          this.onPlayerMove(player);
+
+        }
 
       }
 

@@ -208,8 +208,7 @@ function Game() {
           dy = -1;
         }
 
-        this.moveCamera(dx, dy);
-        this.sendRPC('move', { dx: dx, dy: dy });
+        this.sendRPC('move', { x: dx, y: dy });
 
       }
 
@@ -238,8 +237,8 @@ function Game() {
 
       if (call === 'id') {
         this.onIdMessage(data);
-      } else if (call === 'position') {
-        this.onPositionMessage(data);
+      } else if (call === 'move') {
+        this.onMoveMessage(data);
       } else if (call === 'block') {
         this.onBlockMessage(data);
       } else {
@@ -263,14 +262,13 @@ function Game() {
 
     },
 
-    onPositionMessage: function(position) {
+    onMoveMessage: function(position) {
 
       this.moveCamera(position.x, position.y);
 
     },
 
     onBlockMessage: function(block) {
-
 
       var team = block.team === undefined ? 'empty' : block.team === this.playerId ? 'good' : 'bad';
 
