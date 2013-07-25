@@ -50,7 +50,7 @@ function Game() {
 
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(this.renderer.domElement);
-      this.camera.position.z = 5;
+      this.camera.position.z = 10;
 
       this.registerWindowResize();
       this.registerRender();
