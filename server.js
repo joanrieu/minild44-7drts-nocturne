@@ -41,6 +41,7 @@ function Game() {
       var player = {
         id: this.nextPlayerId++,
         ws: ws,
+        moveId: 0,
       };
       this.players.push(player);
       this.sendRPC(player, 'id', player.id);
@@ -56,6 +57,12 @@ function Game() {
         }
       });
       this.sendRPC(player, 'position', player.position);
+
+      var spawn = this.findBlock(player.position);
+      if (spawn !== undefined) {
+        spawn.type = 'secured';
+        spawn.team = player.id;
+      }
 
       _.each(this.board, _.bind(function(block) {
         this.broadcastRPC('block', block);
@@ -103,6 +110,79 @@ function Game() {
 
         player.position.x += move.dx;
         player.position.y += move.dy;
+
+        this.onPlayerMove(player);
+
+      }
+
+    },
+
+    onPlayerMove: function(player) {
+
+      ++player.moveId;
+      this.startCapture(player);
+
+    },
+
+    findBlock: function(position) {
+
+      return _.find(
+        this.board,
+        function(block) {
+          return block.position.x === position.x
+            && block.position.y === position.y;
+        }
+      );
+
+    },
+
+    startCapture: function(player) {
+
+      var block = this.findBlock(player.position);
+
+      if (block === undefined) {
+        return;
+      }
+
+      var moveId = player.moveId;
+
+      if (block.type === 'empty') {
+
+        _.delay(
+          _.bind(
+            function() {
+              if (player.moveId === moveId) {
+                block.type = 'captured';
+                block.team = player.id;
+                this.broadcastRPC('block', block);
+                this.startCapture(player);
+              }
+            },
+            this
+          ),
+          10000
+        );
+
+      } else if (block.type === 'captured') {
+
+        _.delay(
+          _.bind(
+            function() {
+              if (player.moveId === moveId) {
+                block.type = 'secured';
+                block.team = player.id;
+                this.broadcastRPC('block', block);
+                this.startCapture(player);
+              }
+            },
+            this
+          ),
+          20000
+        );
+
+      } else if (block.type === 'end') {
+
+        // TODO
 
       }
 
