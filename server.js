@@ -170,3 +170,5 @@ var game = new Game();
 gameServer.on('connection', function(ws) { game.onConnection(ws); });
 
 webServer.listen(8080);
+
+require('repl').start({}).context.game = game;
