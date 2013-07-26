@@ -120,18 +120,11 @@ function Game() {
           player.position.y += move.y;
 
           this.sendRPC(player, 'move', move);
-          this.onPlayerMove(player);
+          this.startCapture(player);
 
         }
 
       }
-
-    },
-
-    onPlayerMove: function(player) {
-
-      ++player.moveId;
-      this.startCapture(player);
 
     },
 
@@ -154,7 +147,7 @@ function Game() {
         return;
       }
 
-      var moveId = player.moveId;
+      var moveId = ++player.moveId;
 
       function register(self, type, delay, callback) {
         if (block.type === type) {
