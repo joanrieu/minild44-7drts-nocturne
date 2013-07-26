@@ -46,7 +46,12 @@ function Game() {
 
         renderer: WebGL ? new THREE.WebGLRenderer() : new THREE.CanvasRenderer(),
         scene: new THREE.Scene(),
-        camera: new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000),
+        camera: new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          1,
+          10000
+        ),
 
         geometry: new THREE.CubeGeometry(1, 1, .2),
         materials: {
@@ -63,6 +68,7 @@ function Game() {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(this.renderer.domElement);
       this.camera.position.z = 10;
+      this.camera.rotation.x = Math.PI / 6;
 
       this.registerWindowResize();
       this.registerRender();
@@ -102,7 +108,7 @@ function Game() {
 
       var scale = this.getGridToScreenScale();
       this.camera.position.x = this.smoothCamera.target.x * scale.x;
-      this.camera.position.y = this.smoothCamera.target.y * scale.y;
+      this.camera.position.y = this.smoothCamera.target.y * scale.y - Math.cos(Math.PI / 2 - this.camera.rotation.x) * this.camera.position.z;
 
     },
 
