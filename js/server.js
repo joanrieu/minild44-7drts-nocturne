@@ -259,7 +259,10 @@ var webServer = http.createServer(function(request, response) {
     if (err) {
       serve404();
     } else {
-      response.writeHead(200, { 'Content-type': mime || 'application/octet-stream' });
+      response.writeHead(200, {
+        'Content-type': mime || 'application/octet-stream',
+        'Content-length': buf.length,
+      });
       response.end(buf);
     }
   });
