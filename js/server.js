@@ -230,34 +230,39 @@ function Game() {
 
 var webServer = http.createServer(function(request, response) {
 
-  var path = url.parse(request.url).pathname.substr(1);
-
-  function serveFile(mime) {
-    fs.readFile(path, function(err, buf) {
-      if (err) {
-        serve404();
-      } else {
-        response.writeHead(200, { 'Content-type': mime });
-        response.end(buf);
-      }
-    });
-  }
-
   function serve404() {
     response.writeHead(404, { 'Content-type': 'text/plain' });
     response.end('404 Not Found\n');
   }
 
+  var path = url.parse(request.url).pathname.substr(1);
+
   if (path === '') {
     path = 'index.html';
-    serveFile('text/html');
-  } else if (path === 'reset.css') {
-    serveFile('text/css');
-  } else if (path === 'underscore-min.js' || path === 'three.min.js' || path === 'client.js') {
-    serveFile('application/javascript');
-  } else {
+  } else if (path.indexOf('..') !== -1) {
     serve404();
   }
+
+  var ext = path.split('.');
+  ext = ext[ext.length - 1];
+
+  var mime = ({
+    html: 'text/html',
+    css: 'text/css',
+    js: 'application/javascript',
+    ogg: 'audio/ogg',
+    mp3: 'audio/mpeg',
+    wav: 'audio/x-wav',
+  })[ext];
+
+  fs.readFile(path, function(err, buf) {
+    if (err) {
+      serve404();
+    } else {
+      response.writeHead(200, { 'Content-type': mime || 'application/octet-stream' });
+      response.end(buf);
+    }
+  });
 
 });
 
