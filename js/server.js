@@ -76,6 +76,8 @@ function Game() {
 
     onDisconnection: function(player) {
 
+      ++player.moveId;
+
       this.players = _.without(this.players, player);
 
       if (_.size(this.players) === 0) {
@@ -147,6 +149,10 @@ function Game() {
     startCapture: function(player) {
 
       var block = this.findBlock(player.position);
+
+      if (block === undefined) {
+        return;
+      }
 
       var moveId = player.moveId;
 
