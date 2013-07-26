@@ -9,6 +9,18 @@ function Game() {
       precision: 0.001,
     },
 
+    sound: new Howl({
+      urls: [
+        'snd/effects.ogg',
+        'snd/effects.mp3',
+        'snd/effects.wav',
+      ],
+      sprite: {
+        blockCaptured: [0, 3000],
+        blockSecured: [4000, 3000],
+      },
+    }),
+
     updatesPerSecond: 60,
 
     run: function() {
@@ -270,7 +282,10 @@ function Game() {
 
     onBlockMessage: function(block) {
 
-      var team = block.team === undefined ? 'empty' : block.team === this.playerId ? 'good' : 'bad';
+      var team =
+        block.team === undefined ? 'empty' :
+        block.team === this.playerId ? 'good' :
+        'bad';
 
       var mesh = new THREE.Mesh(this.geometry, this.materials[team]);
       var scale = this.getGridToScreenScale();
@@ -278,16 +293,37 @@ function Game() {
       mesh.position.y = scale.y * block.position.y;
       this.scene.add(mesh);
 
-      var oldBlock = _.find(this.blocks, function(block2) { return _.isEqual(block2.position, block.position); });
+      var oldBlock = _.find(
+        this.blocks,
+        function(block2) {
+          return _.isEqual(block2.position, block.position);
+        }
+      );
 
       if (oldBlock) {
+
         this.scene.remove(oldBlock.mesh);
         this.blocks = _.without(this.blocks, oldBlock);
+
+        if (oldBlock.type === 'empty' && block.type === 'captured') {
+          game.onBlockCaptured(oldBlock, block);
+        } else if (oldBlock.type === 'captured' && block.type === 'secured') {
+          game.onBlockSecured(oldBlock, block);
+        }
+
       }
 
       this.blocks.push(_.extend(block, { mesh: mesh }));
 
     },
+
+    onBlockCaptured: function(oldBlock, block) {
+      this.sound.play('blockCaptured');
+    },
+
+    onBlockSecured: function(oldBlock, block) {
+      this.sound.play('blockSecured');
+    }
 
   });
 
