@@ -14,6 +14,17 @@ function Game() {
       margin: { x: .75, y: .75 },
     },
 
+    music: new Howl({
+      urls: [
+        'snd/music.ogg',
+        'snd/music.mp3',
+        'snd/music.wav',
+      ],
+      autoplay: true,
+      loop: true,
+      volume: 0.3,
+    }),
+
     sound: new Howl({
       urls: [
         'snd/effects.ogg',

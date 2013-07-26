@@ -1037,9 +1037,9 @@ GPL V 2 or later</string>
                 <fxchain numofeffects="0" enabled="0"/>
               </instrumenttrack>
               <pattern steps="16" muted="0" type="1" name="Pizzicato Strings" pos="0" len="192" frozen="0">
-                <note pan="0" key="41" vol="100" pos="0" len="12"/>
-                <note pan="0" key="39" vol="100" pos="12" len="12"/>
-                <note pan="0" key="40" vol="100" pos="24" len="24"/>
+                <note pan="0" key="43" vol="100" pos="0" len="12"/>
+                <note pan="0" key="40" vol="100" pos="12" len="12"/>
+                <note pan="0" key="42" vol="100" pos="24" len="24"/>
               </pattern>
               <pattern steps="16" muted="0" type="0" name="Pizzicato Strings" pos="192" len="192" frozen="0"/>
             </track>
@@ -2000,9 +2000,9 @@ GPL V 2 or later</string>
               </instrumenttrack>
               <pattern steps="16" muted="0" type="0" name="Overdrive 3" pos="0" len="192" frozen="0"/>
               <pattern steps="16" muted="0" type="1" name="Overdrive 3" pos="192" len="192" frozen="0">
-                <note pan="0" key="41" vol="100" pos="0" len="12"/>
-                <note pan="0" key="39" vol="100" pos="12" len="12"/>
-                <note pan="0" key="40" vol="100" pos="24" len="24"/>
+                <note pan="0" key="43" vol="100" pos="0" len="12"/>
+                <note pan="0" key="40" vol="100" pos="12" len="12"/>
+                <note pan="0" key="42" vol="100" pos="24" len="24"/>
               </pattern>
             </track>
           </trackcontainer>
@@ -2016,21 +2016,11 @@ GPL V 2 or later</string>
     </trackcontainer>
     <track muted="0" type="6" name="Automation track">
       <automationtrack/>
-      <automationpattern name="Numérateur" pos="0" len="192">
-        <object id="6852946"/>
-      </automationpattern>
-      <automationpattern name="Dénominateur" pos="0" len="192">
-        <object id="2417095"/>
-      </automationpattern>
-      <automationpattern name="Tempo" pos="0" len="192">
-        <object id="1682198"/>
-      </automationpattern>
-      <automationpattern name="Volume général" pos="0" len="192">
-        <object id="6854415"/>
-      </automationpattern>
-      <automationpattern name="Tonalité générale" pos="0" len="192">
-        <object id="6689592"/>
-      </automationpattern>
+      <automationpattern name="Numérateur" pos="0" len="192"/>
+      <automationpattern name="Dénominateur" pos="0" len="192"/>
+      <automationpattern name="Tempo" pos="0" len="192"/>
+      <automationpattern name="Volume général" pos="0" len="192"/>
+      <automationpattern name="Tonalité générale" pos="0" len="192"/>
     </track>
     <fxmixer width="865" x="5" y="310" maximized="0" height="278" visible="1" minimized="0">
       <fxchannel num="0" muted="0" volume="1" name="Master">

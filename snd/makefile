@@ -1,4 +1,6 @@
-all: effects
+all: music effects
+
+music: music.wav music.ogg music.mp3
 
 effects: effects.wav effects.ogg effects.mp3
 
