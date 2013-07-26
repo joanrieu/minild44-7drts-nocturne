@@ -9,6 +9,11 @@ function Game() {
       precision: 0.001,
     },
 
+    block: {
+      size: { x: 1, y: 1, z: .25 },
+      margin: { x: .75, y: .75 },
+    },
+
     sound: new Howl({
       urls: [
         'snd/effects.ogg',
@@ -37,12 +42,7 @@ function Game() {
 
       _.extend(this, {
 
-        block: {
-          size: { x: 1, y: 1, z: .25 },
-          margin: { x: .75, y: .75 },
-        },
-
-        blocks: [],
+        board: [],
 
         renderer: WebGL ? new THREE.WebGLRenderer() : new THREE.CanvasRenderer(),
         scene: new THREE.Scene(),
@@ -54,12 +54,8 @@ function Game() {
         ),
 
         geometry: new THREE.CubeGeometry(1, 1, .2),
-        materials: {
-          empty: new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true }),
-          good: new THREE.MeshBasicMaterial({ color: 0x55ff33, wireframe: true }),
-          bad: new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true }),
-          current: new THREE.MeshBasicMaterial({ color: 0x33ccff, wireframe: true }),
-        },
+
+        colorgen: new Color.Gen(),
 
         ws: new WebSocket('ws://' + document.location.host),
 
@@ -127,6 +123,41 @@ function Game() {
     moveCameraTo: function(x, y) {
 
       this.moveCamera(x - this.smoothCamera.target.x, y - this.smoothCamera.target.y);
+
+    },
+
+    newBlockMesh: function(block) {
+
+      var scale = this.getGridToScreenScale();
+      var mesh = new THREE.Mesh(this.geometry, this.newBlockMaterial(block));
+      mesh.position.x = scale.x * block.position.x;
+      mesh.position.y = scale.y * block.position.y;
+      return mesh;
+
+    },
+
+    newBlockMaterial: function(block) {
+
+      var options = {
+        color: 0xffffff,
+        wireframe: true,
+      };
+
+      if (block.team !== undefined) {
+        var rgb = Color.HSV2RGB(this.colorgen.getHue(block.team), 1, 1);
+        rgb = [
+          rgb[0] * 255 & 0xff,
+          rgb[1] * 255 & 0xff,
+          rgb[2] * 255 & 0xff,
+        ];
+        options.color = rgb[0] << 16 | rgb[1] << 8 | rgb[2];
+      }
+
+      if (block.type === 'secured') {
+        options.wireframe = false;
+      }
+
+      return new THREE.MeshBasicMaterial(options);
 
     },
 
@@ -288,28 +319,21 @@ function Game() {
 
     onBlockMessage: function(block) {
 
-      var team =
-        block.team === undefined ? 'empty' :
-        block.team === this.playerId ? 'good' :
-        'bad';
-
-      var mesh = new THREE.Mesh(this.geometry, this.materials[team]);
-      var scale = this.getGridToScreenScale();
-      mesh.position.x = scale.x * block.position.x;
-      mesh.position.y = scale.y * block.position.y;
-      this.scene.add(mesh);
-
       var oldBlock = _.find(
-        this.blocks,
+        this.board,
         function(block2) {
           return _.isEqual(block2.position, block.position);
         }
       );
 
+      var mesh = this.newBlockMesh(block);
+      this.scene.add(mesh);
+      this.board.push(_.extend(block, { mesh: mesh }));
+
       if (oldBlock) {
 
         this.scene.remove(oldBlock.mesh);
-        this.blocks = _.without(this.blocks, oldBlock);
+        this.board = _.without(this.board, oldBlock);
 
         if (oldBlock.type === 'empty' && block.type === 'captured') {
           game.onBlockCaptured(oldBlock, block);
@@ -318,8 +342,6 @@ function Game() {
         }
 
       }
-
-      this.blocks.push(_.extend(block, { mesh: mesh }));
 
     },
 
