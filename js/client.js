@@ -155,7 +155,7 @@ function Game() {
       };
 
       if (block.team !== undefined) {
-        var rgb = Color.HSV2RGB(this.colorgen.getHue(block.team), 1, 1);
+        var rgb = this.colorgen.getColor(block.team);
         rgb = [
           rgb[0] * 255 & 0xff,
           rgb[1] * 255 & 0xff,

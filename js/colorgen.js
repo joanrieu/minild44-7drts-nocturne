@@ -39,32 +39,17 @@ var Color = {
 
   Gen: function() {
 
-    this.hues = [];
+    this.hues = [ 0, 3/8, 5/8, 1/2, 3/4, 3/16, 7/8, 3/32 ];
 
-    this.cuts = 3;
-    this.padding = 1;
-    this.index = 0;
+    this.getColor = function(index) {
 
-    this.nextHue = function() {
+      var loop = Math.floor(index / this.hues.length);
 
-      if (this.index == this.cuts) {
-        this.padding /= 2;
-        this.index = 0;
-      }
-
-      var hue = (this.padding + this.index++ / this.cuts) % 1;
-      this.hues.push(hue);
-      return hue;
-
-    };
-
-    this.getHue = function(index) {
-
-      while (this.hues.length <= index) {
-        this.nextHue();
-      }
-
-      return this.hues[index];
+      return Color.HSV2RGB(
+        this.hues[index % this.hues.length] + loop / (2 * this.hues.length),
+        1,
+        (2 - loop / (loop + 1)) / 2
+      );
 
     };
 
