@@ -43,6 +43,7 @@ function Game() {
         id: this.nextPlayerId++,
         ws: ws,
         moveId: 0,
+        position: {}
       };
       this.players.push(player);
       this.sendRPC(player, 'id', player.id);
@@ -51,19 +52,14 @@ function Game() {
         this.growBoard();
       }
 
-      _.extend(player, {
-        position: { // TODO random spawn position
-          x: 0,
-          y: 0,
-        }
-      });
+      var spawn = undefined;
+      do {
+        spawn = this.board[Math.floor(Math.random() * this.board.length)];
+      } while (spawn.type === 'end');
+      spawn.type = 'secured';
+      spawn.team = player.id;
+      _.extend(player.position, spawn.position);
       this.sendRPC(player, 'move', player.position);
-
-      var spawn = this.findBlock(player.position);
-      if (spawn !== undefined) {
-        spawn.type = 'secured';
-        spawn.team = player.id;
-      }
 
       _.each(this.board, _.bind(function(block) {
         this.broadcastRPC('block', block);
@@ -152,16 +148,13 @@ function Game() {
       function register(self, type, delay, callback) {
         if (block.type === type) {
           _.delay(
-            _.bind(
-              function() {
-                if (block.type === type && player.moveId === moveId) {
-                  callback();
-                  this.broadcastRPC('block', block);
-                  this.startCapture(player);
-                }
-              },
-              self
-            ),
+            function() {
+              if (block.type === type && player.moveId === moveId) {
+                _.bind(callback, self)();
+                self.broadcastRPC('block', block);
+                self.startCapture(player);
+              }
+            },
             delay
           );
         }

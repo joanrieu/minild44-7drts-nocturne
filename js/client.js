@@ -76,6 +76,7 @@ function Game() {
       document.body.appendChild(this.renderer.domElement);
       this.camera.position.z = 10;
       this.camera.rotation.x = Math.PI / 6;
+      this.setCamera(0, 0);
 
       this.registerWindowResize();
       this.registerRender();
@@ -115,7 +116,9 @@ function Game() {
 
       var scale = this.getGridToScreenScale();
       this.camera.position.x = this.smoothCamera.target.x * scale.x;
-      this.camera.position.y = this.smoothCamera.target.y * scale.y - Math.cos(Math.PI / 2 - this.camera.rotation.x) * this.camera.position.z;
+      this.camera.position.y =
+        this.smoothCamera.target.y * scale.y
+        - Math.cos(Math.PI / 2 - this.camera.rotation.x) * this.camera.position.z;
 
     },
 
@@ -302,7 +305,7 @@ function Game() {
       } else if (call === 'block') {
         this.onBlockMessage(data);
       } else {
-        console.error('unknown RPC', rpc);
+        console.error('Unknown RPC', rpc);
       }
 
     },
