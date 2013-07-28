@@ -314,7 +314,8 @@ function Game() {
 
       this.ws.onmessage = _.bind(this.onMessage, this);
       this.ws.onclose = this.ws.onerror = function() {
-        alert('Cannot connect to the game server!');
+        console.error('Cannot connect to the game server!');
+        _.delay(function() { document.location.reload(); }, 1000);
       }
 
     },

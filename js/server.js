@@ -91,7 +91,7 @@ function Game() {
       if (call === 'move') {
         this.onMoveMessage(player, data);
       } else {
-        console.error('unknown RPC', rpc);
+        console.error('Unknown RPC', rpc);
       }
 
     },
@@ -103,7 +103,7 @@ function Game() {
         || _.indexOf([-1, 0, 1], move.y) === -1
       ) {
 
-        console.error('Cheater detected:', player.ws.upgradeReq.connection.remoteAddress);
+        console.error('Cheater detected', player.ws.upgradeReq.connection.remoteAddress);
 
       } else {
 
@@ -281,8 +281,8 @@ var webServer = http.createServer(function(request, response) {
 
 var gameServer = new WebSocketServer({ server: webServer });
 var game = new Game();
-gameServer.on('connection', function(ws) { game.onConnection(ws); });
+gameServer.on('connection', _.bind(game.onConnection, game));
 
 webServer.listen(8080);
 
-require('repl').start({}).context.game = game;
+_.extend(require('repl').start({}).context, { game: game, underscore: _ });
