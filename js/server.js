@@ -55,7 +55,7 @@ function Game() {
       var spawn = undefined;
       do {
         spawn = this.board[Math.floor(Math.random() * this.board.length)];
-      } while (spawn.type === 'end');
+      } while (spawn.type === 'end' || this.findPlayer(spawn.position) !== undefined);
       spawn.type = 'secured';
       spawn.team = player.id;
       _.extend(player.position, spawn.position);
@@ -107,14 +107,21 @@ function Game() {
 
       } else {
 
-        if (this.findBlock({
+        var position = {
           x: player.position.x + move.x,
           y: player.position.y + move.y,
-        }) !== undefined) {
+        };
 
-          player.position.x += move.x;
-          player.position.y += move.y;
+        if (this.findBlock(position) !== undefined) {
 
+          var oldPlayer = this.findPlayer(position);
+          if (oldPlayer !== undefined) {
+            oldPlayer.position = player.position;
+            this.sendRPC(oldPlayer, 'move', { x: -move.x, y: -move.y });
+            this.startCapture(oldPlayer);
+          }
+
+          player.position = position;
           this.sendRPC(player, 'move', move);
           this.startCapture(player);
 
@@ -130,6 +137,17 @@ function Game() {
         this.board,
         function(block) {
           return _.isEqual(block.position, position);
+        }
+      );
+
+    },
+
+    findPlayer: function(position) {
+
+      return _.find(
+        this.players,
+        function(player) {
+          return _.isEqual(player.position, position);
         }
       );
 
