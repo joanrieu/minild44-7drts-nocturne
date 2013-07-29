@@ -192,7 +192,18 @@ function Game() {
         if (Math.random() < block.tries++ / 3) {
           this.broadcastRPC('end');
         } else {
-          // TODO
+          var total = _.size(this.board);
+          var destroyable = total / 3;
+          while (destroyable --> 0) {
+            var index = Math.floor(Math.random() * total);
+            if (this.board[index].type !== 'end') {
+              this.board[index] = {
+                type: 'empty',
+                position: this.board[index].position,
+              };
+              this.broadcastRPC('block', this.board[index]);
+            }
+          }
         }
       });
 
