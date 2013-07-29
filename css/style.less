@@ -1,0 +1,65 @@
+@color: #3cf;
+
+body {
+  padding: 10px;
+  color: @color;
+  background-color: #222;
+  font-family: 'Ubuntu Mono', sans-serif;
+  font-size: 16px;
+}
+
+h1 {
+  font-family: 'Nixie One', sans-serif;
+  font-size: 48px;
+  float: left;
+}
+
+#options {
+
+  float: right;
+
+  input {
+    display: none;
+  }
+
+  label {
+    padding: 5px;
+    border: 1px solid @color;
+    border-radius: 50%;
+  }
+
+}
+
+.box {
+
+  width: 25%;
+  margin: auto;
+  padding: 20px;
+  clear: both;
+  text-align: center;
+  border: 1px solid @color;
+
+  button, input {
+    padding: 5px;
+    border: 1px solid @color;
+    border-radius: 25%;
+    font-size: 1em;
+    text-align: center;
+    color: @color;
+    background-color: transparent;
+  }
+
+}
+
+canvas {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: -1;
+  user-select: none; /* no support */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}

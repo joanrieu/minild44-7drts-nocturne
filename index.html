@@ -3,38 +3,32 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
-    <title>7dRTS</title>
-    <link rel="stylesheet" href="css/reset.css">
+    <title>Nocturne</title>
     <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nixie+One">
-    <style>
-      body {
-        padding: 10px;
-        color: #ffcc33;
-        background-color: #222;
-      }
-      h1 {
-        font-family: 'Nixie One', sans-serif;
-        font-size: 48px;
-      }
-      canvas {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        user-select: none; /* no support */
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>7dRTS</h1>
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono">
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet/less" href="css/style.less">
+    <script src="http://code.jquery.com/jquery.min.js"></script>
     <script src="js/libs/underscore-min.js"></script>
     <script src="js/libs/three.min.js"></script>
     <script src="js/libs/howler.min.js"></script>
+    <script src="js/libs/less.min.js"></script>
     <script src="js/colorgen.js"></script>
     <script src="js/client.js"></script>
+    <script src="js/ui.js"></script>
+    <style>
+    </style>
+  </head>
+  <body>
+    <h1>Nocturne</h1><br>
+    <div id="options">
+      <input type="checkbox" id="sound" checked>
+      <label for="sound">&#x266B;</label>
+    </div>
+    <div class="box">
+      <span>What's your name ?</span>
+      <input id="name">
+      <button id="play">Play</button>
+    </div>
   </body>
 </html>

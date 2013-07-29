@@ -279,7 +279,7 @@ function Game() {
 
     registerClick: function() {
 
-      document.addEventListener(
+      this.renderer.domElement.addEventListener(
         'click',
         _.bind(
           function(e) {
@@ -371,6 +371,3 @@ function Game() {
   });
 
 };
-
-var game = new Game();
-game.run();
