@@ -190,7 +190,18 @@ function Game() {
 
       register(this, 'end', 15000, function() {
         if (Math.random() < block.tries++ / 3) {
-          this.broadcastRPC('end');
+          var score = [];
+          _.each(this.board, function(block) {
+            if (score[block.team] === undefined) {
+              score[block.team] = 0;
+            }
+            if (block.type === 'captured') {
+              score[block.team] += 20;
+            } else if (block.type === 'secured') {
+              score[block.team] += 15;
+            }
+          });
+          this.broadcastRPC('end', score);
         } else {
           var total = _.size(this.board);
           var destroyable = total / 3;
