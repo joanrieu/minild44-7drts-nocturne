@@ -39,7 +39,7 @@ function Game() {
 
     updatesPerSecond: 60,
 
-    run: function() {
+    run: function(name) {
 
       var WebGL = (function () {
         try {
@@ -52,6 +52,9 @@ function Game() {
       })();
 
       _.extend(this, {
+
+        playerName: name,
+        players: [],
 
         board: [],
 
@@ -300,6 +303,8 @@ function Game() {
 
       if (call === 'id') {
         this.onIdMessage(data);
+      } else if (call === 'name') {
+        this.onNameMessage(data);
       } else if (call === 'move') {
         this.onMoveMessage(data);
       } else if (call === 'block') {
@@ -323,6 +328,13 @@ function Game() {
     onIdMessage: function(id) {
 
       this.playerId = id;
+      this.sendRPC('name', this.playerName);
+
+    },
+
+    onNameMessage: function(player) {
+
+      this.players[player.id] = _.escape(player.name);
 
     },
 

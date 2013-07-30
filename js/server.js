@@ -88,11 +88,22 @@ function Game() {
       var call = rpc.procedure;
       var data = rpc.data;
 
-      if (call === 'move') {
+      if (call === 'name') {
+        this.onNameMessage(player, data);
+      } else if (call === 'move') {
         this.onMoveMessage(player, data);
       } else {
         console.error('Unknown RPC', rpc);
       }
+
+    },
+
+    onNameMessage: function(player, name) {
+
+      player.name = name;
+      _.each(this.players, _.bind(function(player) {
+        this.broadcastRPC('name', _.pick(player, 'id', 'name'));
+      }, this));
 
     },
 
