@@ -342,9 +342,27 @@ function Game() {
 
     },
 
-    onMoveMessage: function(position) {
+    onMoveMessage: function(delta) {
 
-      this.moveCamera(position.x, position.y);
+      this.moveCamera(delta.x, delta.y);
+
+      var block = _.find(this.board, _.bind(function(block) {
+        return _.isEqual(block.position, this.smoothCamera.target);
+      }, this));
+
+      if (block !== undefined) {
+        var t = 0;
+        var effect = _.bind(function() {
+          if (t < 1) {
+            t += 1 / this.updatesPerSecond;
+            block.mesh.scale.x = block.mesh.scale.y = 1 + Math.sin(t * Math.PI) / 5;
+            this.registerUpdate(effect);
+          } else {
+            block.mesh.scale.x = block.mesh.scale.y = 1;
+          }
+        }, this);
+        effect();
+      }
 
     },
 
