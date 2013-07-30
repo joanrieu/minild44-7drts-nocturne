@@ -1,0 +1,4 @@
+node_modules
+snd/*.ogg
+snd/*.mp3
+snd/*.wav
