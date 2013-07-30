@@ -161,6 +161,7 @@ function Game() {
       };
 
       if (block.team !== undefined) {
+
         var rgb = this.colorgen.getColor(block.team);
         rgb = [
           rgb[0] * 255 & 0xff,
@@ -168,10 +169,13 @@ function Game() {
           rgb[2] * 255 & 0xff,
         ];
         options.color = rgb[0] << 16 | rgb[1] << 8 | rgb[2];
-      }
 
-      if (block.type === 'secured') {
+        options.wireframe = block.type === 'captured';
+
+      } else if (block.type === 'end') {
+
         options.wireframe = false;
+
       }
 
       return new THREE.MeshBasicMaterial(options);
