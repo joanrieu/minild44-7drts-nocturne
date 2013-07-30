@@ -199,7 +199,7 @@ function Game() {
         block.team = player.id;
       });
 
-      register(this, 'end', 15000, function() {
+      register(this, 'end', 5000, function() {
         if (Math.random() < block.tries++ / 3) {
           var score = [];
           _.each(this.board, function(block) {

@@ -69,8 +69,6 @@ function Game() {
 
         geometry: new THREE.CubeGeometry(1, 1, .2),
 
-        colorgen: new Color.Gen(),
-
         ws: new WebSocket('ws://' + document.location.host),
 
       });
@@ -162,12 +160,7 @@ function Game() {
 
       if (block.team !== undefined) {
 
-        var rgb = this.colorgen.getColor(block.team);
-        rgb = [
-          rgb[0] * 255 & 0xff,
-          rgb[1] * 255 & 0xff,
-          rgb[2] * 255 & 0xff,
-        ];
+        var rgb = Color.genIntRGB(block.team);
         options.color = rgb[0] << 16 | rgb[1] << 8 | rgb[2];
 
         options.wireframe = block.type === 'captured';
@@ -313,6 +306,8 @@ function Game() {
         this.onMoveMessage(data);
       } else if (call === 'block') {
         this.onBlockMessage(data);
+      } else if (call === 'end') {
+        this.onEndMessage(data);
       } else {
         console.error('Unknown RPC', rpc);
       }
@@ -322,7 +317,7 @@ function Game() {
     registerMessage: function() {
 
       this.ws.onmessage = _.bind(this.onMessage, this);
-      this.ws.onclose = this.ws.onerror = function() {
+      this.ws.onerror = function() {
         console.error('Cannot connect to the game server!');
         _.delay(function() { document.location.reload(); }, 1000);
       }
@@ -400,7 +395,11 @@ function Game() {
 
     onBlockSecured: function(oldBlock, block) {
       this.sound.play('blockSecured');
-    }
+    },
+
+    onEndMessage: function(score) {
+      this.ws.close();
+    },
 
   });
 

@@ -1,6 +1,6 @@
 var Color = {
 
-  H2RGB: function(hue) {
+  getFloatRGB_fromHue: function(hue) {
 
     var wheel = [
       [ 1, 0, 0 ], // R
@@ -25,34 +25,47 @@ var Color = {
 
   },
 
-  HSV2RGB: function(hue, saturation, value) {
+  getFloatRGB_fromHSV: function(hsv) {
 
-    var color = this.H2RGB(hue);
+    var rgb = this.getFloatRGB_fromHue(hsv[0]);
 
     return [
-      value * (1 + saturation * (color[0] - 1)),
-      value * (1 + saturation * (color[1] - 1)),
-      value * (1 + saturation * (color[2] - 1)),
+      hsv[2] * (1 + hsv[1] * (rgb[0] - 1)),
+      hsv[2] * (1 + hsv[1] * (rgb[1] - 1)),
+      hsv[2] * (1 + hsv[1] * (rgb[2] - 1)),
     ];
 
   },
 
-  Gen: function() {
+  getIntRGB_fromFloatRGB: function(rgb) {
 
-    this.hues = [ 0, 3/8, 5/8, 1/2, 3/4, 3/16, 7/8, 3/32 ];
+    return [
+      rgb[0] * 255 & 0xff,
+      rgb[1] * 255 & 0xff,
+      rgb[2] * 255 & 0xff,
+    ];
 
-    this.getColor = function(index) {
+  },
 
-      var loop = Math.floor(index / this.hues.length);
+  genHSV: function(index) {
 
-      return Color.HSV2RGB(
-        this.hues[index % this.hues.length] + loop / (2 * this.hues.length),
-        1,
-        (2 - loop / (loop + 1)) / 2
-      );
+    var hues = [ 0, 3/8, 5/8, 1/2, 3/4, 3/16, 7/8, 3/32 ];
+    var loop = Math.floor(index / hues.length);
 
-    };
+    return [
+      hues[index % hues.length] + loop / (2 * hues.length),
+      1,
+      (2 - loop / (loop + 1)) / 2
+    ];
 
-  }
+  },
+
+  genFloatRGB: function(index) {
+    return this.getFloatRGB_fromHSV(this.genHSV(index));
+  },
+
+  genIntRGB: function(index) {
+    return this.getIntRGB_fromFloatRGB(this.genFloatRGB(index));
+  },
 
 };

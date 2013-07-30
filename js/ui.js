@@ -3,28 +3,44 @@ var game;
 $(function() {
 
   game = new Game();
+
+  game.onIdMessage = _.compose(function() {
+    less.modifyVars({
+      color: 'rgb(' + Color.genIntRGB(this.playerId).join(',') + ')',
+    });
+  }, game.onIdMessage);
+
   game.onNameMessage = _.compose(function() {
-    var list = _.reduce(game.players, function(memo, player, index) {
-      var color = game.colorgen.getColor(index);
-      color = [
-        Math.floor(color[0] * 255),
-        Math.floor(color[1] * 255),
-        Math.floor(color[2] * 255),
-      ];
-      return memo + '<li style="color: rgb(' + color[0] + ',' + color[1] + ',' + color[2] + ');">' + player + '</li>';
-    }, '');
-    $('#score').html(list);
+    var html = _.map(game.players, function(player, id) {
+      return '<li style="color: rgb(' + Color.genIntRGB(id).join() + ');">' + player + '</li>';
+    });
+    $('#players').html(html.join(''));
   }, game.onNameMessage);
 
-  $('#players').change(function() {
+  game.onEndMessage = _.compose(game.onEndMessage, function(score) {
+    score = _.sortBy(_.map(this.players, function(player, id) {
+      return {
+        id: id,
+        name: player,
+        score: score[id],
+      };
+    }), function(player) { return -player.score; });
+    var html = _.map(score, function(player) {
+      return '<li style="color: rgb(' + Color.genIntRGB(player.id).join() + ');">' + player.name + ': ' + player.score + '</li>';
+    });
+    $('#players').html(html.join('')).fadeIn();
+    return score;
+  });
+
+  $('#opt-players').change(function() {
     if (this.checked) {
-      $('#score').show();
+      $('#players').fadeIn();
     } else {
-      $('#score').hide();
+      $('#players').fadeOut();
     }
   });
 
-  $('#sound').change(function() {
+  $('#opt-sound').change(function() {
     if (this.checked) {
       Howler.unmute();
     } else {
@@ -33,8 +49,8 @@ $(function() {
   });
 
   $('#play').click(function() {
-    $('#loader').hide();
-    $('#players + label').show();
+    $('#loader').fadeOut();
+    $('#opt-players + label').fadeIn();
     game.run($('#name').val());
     return false;
   });
