@@ -34,6 +34,7 @@ $(function() {
 
   $('#play').click(function() {
     $('#loader').hide();
+    $('#players + label').show();
     game.run($('#name').val());
     return false;
   });
