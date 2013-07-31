@@ -309,7 +309,7 @@ function Game() {
       } else if (call === 'end') {
         this.onEndMessage(data);
       } else {
-        console.error('Unknown RPC', rpc);
+        console.warn('Unknown RPC', rpc);
       }
 
     },

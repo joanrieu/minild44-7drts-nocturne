@@ -7,6 +7,8 @@ var _ = require('underscore'),
 
 function Game() {
 
+  console.info('Start');
+
   _.extend(this, {
 
     board: [
@@ -72,6 +74,8 @@ function Game() {
 
     onDisconnection: function(player) {
 
+      console.info('Disconnection', player.name);
+
       ++player.moveId;
 
       this.players = _.without(this.players, player);
@@ -93,12 +97,14 @@ function Game() {
       } else if (call === 'move') {
         this.onMoveMessage(player, data);
       } else {
-        console.error('Unknown RPC', rpc);
+        console.warn('Unknown RPC', rpc);
       }
 
     },
 
     onNameMessage: function(player, name) {
+
+      console.info('Connection', name, player.ws.upgradeReq.connection.remoteAddress);
 
       player.name = name;
       _.each(this.players, _.bind(function(player) {
@@ -114,7 +120,7 @@ function Game() {
         || _.indexOf([-1, 0, 1], move.y) === -1
       ) {
 
-        console.error('Cheater detected', player.ws.upgradeReq.connection.remoteAddress);
+        console.warn('Cheater', player.ws.upgradeReq.connection.remoteAddress);
 
       } else {
 
@@ -212,6 +218,7 @@ function Game() {
               score[block.team] += 15;
             }
           });
+          console.info('End', score);
           this.broadcastRPC('end', score);
         } else {
           var total = _.size(this.board);
