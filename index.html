@@ -27,11 +27,32 @@
       <input type="checkbox" id="opt-sound" checked>
       <label for="opt-sound">&#x266B;</label>
     </div>
-    <form id="loader" class="box">
-      <label for="name">What's your name ?</label>
-      <input id="name" autocomplete="off">
-      <button id="play" type="submit">Play</button>
-    </form>
+    <div id="loader">
+      <form class="box">
+        <label for="name">What's your name ?</label>
+        <input id="name" autocomplete="off">
+        <button id="play" type="submit">Play</button>
+      </form>
+      <div class="box">
+        <h2>Expand and Dominate</h2>
+        <hr>
+        <p>
+          3s to capture &#x25FB;<br>
+          10s to secure &#x25FC;
+        </p>
+        <p>
+          secured = not capturable<br>
+          but worth less points
+        </p>
+        <hr>
+        <p>
+          white "end" block<br>
+          5s to trigger<br>
+          either ends the game<br>
+          or destroys some blocks
+        </p>
+      </div>
+    </div>
     <ul id="players" class="box" style="display: none;"></ul>
   </body>
 </html>
