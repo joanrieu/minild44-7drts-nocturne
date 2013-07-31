@@ -209,13 +209,15 @@ function Game() {
         if (Math.random() < block.tries++ / 3) {
           var score = [];
           _.each(this.board, function(block) {
-            if (score[block.team] === undefined) {
-              score[block.team] = 0;
-            }
-            if (block.type === 'captured') {
-              score[block.team] += 20;
-            } else if (block.type === 'secured') {
-              score[block.team] += 15;
+            if (block.team !== undefined) {
+              if (score[block.team] === undefined) {
+                score[block.team] = 0;
+              }
+              if (block.type === 'captured') {
+                score[block.team] += 20;
+              } else if (block.type === 'secured') {
+                score[block.team] += 15;
+              }
             }
           });
           console.info('End', score);

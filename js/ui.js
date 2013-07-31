@@ -22,7 +22,7 @@ $(function() {
       return {
         id: id,
         name: player,
-        score: score[id],
+        score: score[id] || 0,
       };
     }), function(player) { return -player.score; });
     var html = _.map(score, function(player) {
